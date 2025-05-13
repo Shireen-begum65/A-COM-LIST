@@ -1,0 +1,17 @@
+1.  MICROCONTROLLER :Atmega328P  U
+2.  CAPACITORS:CS4735v
+3. COMPARATOR
+4. Amega16U2  
+5. VOLTAGE REGULATOR(1117C (50 C411)) AND (LB2K)
+6. power supply section
+7. Crystal Oscillator
+8. ICSP(IN-circuit serialProgrammin)
+9.IOREF
+10. USB
+11. POLY FUSE
+12. 14 digital i/o pins(0 to 13)
+13.SPI 
+15. PROTECTION DIODE
+16. POWER SUPPLY 
+17.Analog input pins
+18.reset button

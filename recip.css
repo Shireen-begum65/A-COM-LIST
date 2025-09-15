@@ -1,0 +1,75 @@
+  body 
+  { background-color:skyblue; 
+  font-family: Arial, sans-serif; margin: 20px; max-width:device-width; }
+  input, button, select { 
+  padding: 8px;
+  margin: 5px 0; 
+  font-size: 16px; }
+  #chips { margin: 10px 0;
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 6px; }
+  .chip { 
+  background: #007BFF; 
+  color: white;
+  padding: 5px 10px; 
+  border-radius: 15px; 
+  display: flex; 
+  align-items: center; }
+  .chip button { background:red; border: none; color: white; margin-left: 6px; cursor: pointer; }
+  #results { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 16px; margin-top: 20px; }
+  .recipe-card { border: 1px solid green; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .recipe-card img { width: 100%; height: 140px; object-fit: cover; }
+  .recipe-card h3 { margin: 10px; font-size: 18px; }
+  .recipe-card button { margin: 10px; padding: 8px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 5px; }
+  #favoritesList { margin-top: 30px; }
+  .fav-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .fav-item img { width: 60px; border-radius: 5px; }
+  .fav-item h4 { margin: 0; flex: 1; }
+  .fav-item button { padding: 5px 10px; cursor: pointer; background:pink; color: white; border: none; border-radius: 5px; }
+  /* Modal */
+  #modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; }
+  #modal.open { display: flex; }
+  #modalContent { background: grad; max-width: 600px; width: 90%; padding: 20px; border-radius: 8px; max-height: 80vh; overflow-y: auto; }
+  #modalContent h2 { margin-top: 0; }
+  #modalContent ol { padding-left: 20px; }
+  #closeModal { background: green; color:grid; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+  h1{
+	  background:black;
+	  margin:0px;
+	  padding:0px;
+      text-align:center;
+	  color:brown;
+  }
+  label{
+	  background:black;
+	  margin:5px;
+	  padding:10px;
+	  color:pink;
+	  max-width:700px;
+  }
+  h2{
+	  background:white;
+	  margin:0px;
+	  padding:0px;
+      text-align:center;
+	  color:green;
+  }
+   h3{ 
+	  background:pink;
+	  margin:5px;
+	  padding:5px;
+      text-align:center;
+	  color:red;
+   }
+   button{
+	   color:red;
+	   border:5px;
+   }
+   #favoritesList{
+	   color:black;
+	   background-color:gray;
+	   margin:5px;
+	   padding:10px;
+	   text-align:center;
+   }

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recipe Finder with TheMealDB</title>
+
+<link rel="stylesheet" href="recip.css">
+</head>
+<body>
+<h1>Recipe Finder with TheMealDB</h1><br><br><br>
+<label>Enter ingredients (comma separated):</label><br><br><br>
+<input id="ingredientInput" placeholder="e.g. chicken, tomato" />
+<div id="chips"></div>
+<button id="searchBtn">Search Recipes</button><br><br><br>
+
+<h2>Results</h2>
+<div id="results"></div><br><br><br>
+
+<h3>Favorites <span id="favCount">(0)</span></h3><br><br><br>
+<div id="favoritesList"><small>No favorites yet.</small></div><br><br><br>
+
+<!-- Modal -->
+<div id="modal" aria-hidden="true">
+  <div id="modalContent" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle"></h2>
+    <img id="modalImg" src="" alt="" style="width:100%; border-radius:8px; margin-bottom:10px;" />
+    <p><strong>Category:</strong> <span id="modalCategory"></span> | <strong>Area:</strong> <span id="modalArea"></span></p>
+    <p id="modalInstructions"></p>
+    <h3>Ingredients</h3>
+    <ul id="modalIngredients"></ul>
+    <button id="closeModal">Close</button>
+  </div>
+</div>
+
+<script>
+  // Elements
+  const ingredientInput = document.getElementById('ingredientInput');
+  const chipsContainer = document.getElementById('chips');
+  const searchBtn = document.getElementById('searchBtn');
+  const results = document.getElementById('results');
+  const favoritesList = document.getElementById('favoritesList');
+  const favCount = document.getElementById('favCount');
+  const modal = document.getElementById('modal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalImg = document.getElementById('modalImg');
+  const modalCategory = document.getElementById('modalCategory');
+  const modalArea = document.getElementById('modalArea');
+  const modalInstructions = document.getElementById('modalInstructions');
+  const modalIngredients = document.getElementById('modalIngredients');
+  const closeModalBtn = document.getElementById('closeModal');
+
+  // State
+  let ingredients = [];
+  let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+  // Helper functions
+  function updateChips() {
+    chipsContainer.innerHTML = '';
+    ingredients.forEach((ing, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = ing;
+      const btn = document.createElement('button');
+      btn.textContent = '×';
+      btn.onclick = () => {
+        ingredients.splice(idx, 1);
+        updateChips();
+      };
+      chip.appendChild(btn);
+      chipsContainer.appendChild(chip);
+    });
+  }
+
+  ingredientInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const vals = ingredientInput.value.split(',').map(i => i.trim().toLowerCase()).filter(Boolean);
+      vals.forEach(v => {
+        if(!ingredients.includes(v)) ingredients.push(v);
+      });
+      ingredientInput.value = '';
+      updateChips();
+    }
+  });
+
+  function saveFavorites() {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }
+
+  function updateFavoritesUI() {
+    favCount.textContent = `(${favorites.length})`;
+    favoritesList.innerHTML = '';
+    if(favorites.length === 0) {
+      favoritesList.innerHTML = '<small>No favorites yet.</small>';
+      return;
+    }
+    favorites.forEach(meal => {
+      const div = document.createElement('div');
+      div.className = 'fav-item';
+      div.innerHTML = `
+        <img src="${meal.strMealThumb}" alt="${meal.strMeal}" />
+        <h4>${meal.strMeal}</h4>
+        <button data-id="${meal.idMeal}">Remove</button>
+      `;
+      favoritesList.appendChild(div);
+      div.querySelector('button').onclick = () => {
+        favorites = favorites.filter(f => f.idMeal !== meal.idMeal);
+        saveFavorites();
+        updateFavoritesUI();
+      };
+      div.querySelector('img').onclick = () => showModal(meal.idMeal);
+      div.querySelector('h4').onclick = () => showModal(meal.idMeal);
+    });
+  }
+
+  async function searchRecipes() {
+    if(ingredients.length === 0) {
+      alert('Please enter at least one ingredient!');
+      return;
+    }
+    results.innerHTML = 'Loading...';
+    // TheMealDB filter.php only allows 1 ingredient at a time for filtering
+    // We'll fetch results for each ingredient, then combine results by meal ID
+
+    const allMeals = {};
+    for(const ing of ingredients) {
+      try {
+        const res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${ing}`);
+        const data = await res.json();
+        if(data.meals) {
+          data.meals.forEach(meal => {
+            allMeals[meal.idMeal] = meal;
+          });
+        }
+      } catch(e) {
+        console.error('API error:', e);
+      }
+    }
+
+    const meals = Object.values(allMeals);
+    if(meals.length === 0) {
+      results.innerHTML = '<p>No recipes found for those ingredients.</p>';
+      return;
+    }
+    renderRecipeList(meals);
+  }
+
+  function renderRecipeList(meals) {
+    results.innerHTML = '';
+    meals.forEach(meal => {
+      const card = document.createElement('div');
+      card.className = 'recipe-card';
+      card.innerHTML = `
+        <img src="${meal.strMealThumb}" alt="${meal.strMeal}" />
+        <h3>${meal.strMeal}</h3>
+        <button data-id="${meal.idMeal}">View Details</button>
+      `;
+      results.appendChild(card);
+      card.querySelector('button').onclick = () => showModal(meal.idMeal);
+    });
+  }
+
+  async function showModal(idMeal) {
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    modalTitle.textContent = 'Loading...';
+    modalImg.src = '';
+    modalCategory.textContent = '';
+    modalArea.textContent = '';
+    modalInstructions.textContent = '';
+    modalIngredients.innerHTML = '';
+
+    try {
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${idMeal}`);
+      const data = await res.json();
+      const meal = data.meals[0];
+
+      modalTitle.textContent = meal.strMeal;
+      modalImg.src = meal.strMealThumb;
+      modalImg.alt = meal.strMeal;
+      modalCategory.textContent = meal.strCategory;
+      modalArea.textContent = meal.strArea;
+      modalInstructions.textContent = meal.strInstructions;
+
+      // Collect ingredients & measures
+      modalIngredients.innerHTML = '';
+      for(let i=1; i<=20; i++) {
+        const ingredient = meal[`strIngredient${i}`];
+        const measure = meal[`strMeasure${i}`];
+        if(ingredient && ingredient.trim()) {
+          const li = document.createElement('li');
+          li.textContent = `${measure} ${ingredient}`.trim();
+          modalIngredients.appendChild(li);
+        }
+      }
+
+      // Add favorite toggle button inside modal
+      if(!modal.querySelector('#favToggle')) {
+        const favBtn = document.createElement('button');
+        favBtn.id = 'favToggle';
+        favBtn.style.marginTop = '10px';
+        modal.querySelector('#closeModal').before(favBtn);
+        favBtn.onclick = toggleFavorite.bind(null, meal);
+      }
+      updateFavToggle(meal);
+
+    } catch(e) {
+      modalTitle.textContent = 'Failed to load details';
+      console.error(e);
+    }
+  }
+
+  function updateFavToggle(meal) {
+    const favBtn = document.getElementById('favToggle');
+    if(!favBtn) return;
+    if(favorites.find(f => f.idMeal === meal.idMeal)) {
+      favBtn.textContent = 'Remove from Favorites ❤️';
+      favBtn.style.background = '#dc3545';
+    } else {
+      favBtn.textContent = 'Add to Favorites 🤍';
+      favBtn.style.background = '#28a745';
+    }
+  }
+
+  function toggleFavorite(meal) {
+    const exists = favorites.find(f => f.idMeal === meal.idMeal);
+    if(exists) {
+      favorites = favorites.filter(f => f.idMeal !== meal.idMeal);
+    } else {
+      favorites.push(meal);
+    }
+    saveFavorites();
+    updateFavoritesUI();
+    updateFavToggle(meal);
+  }
+
+  closeModalBtn.onclick = () => {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  // Initial render favorites on page load
+  updateFavoritesUI();
+
+  // Search button click
+  searchBtn.onclick = searchRecipes;
+
+</script>
+</body>
+</html>
